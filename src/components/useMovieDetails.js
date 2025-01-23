@@ -2,47 +2,39 @@ import { useEffect, useState } from "react";
 
 const key = 'd1c45b16';
 
-export function useMovies(query) {
+export function useMovieDetails(selectedId) {
 
-    const [movies, setMovies] = useState([]);
+    const [movie, setMovie] = useState({});
     const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState('');
 
     useEffect(function () {
         const controller = new AbortController();
-
-        async function fetchMovies() {
+        async function fetchMovieDetails() {
             try {
                 setIsLoading(true);
-                setError('');
-                const url = `http://www.omdbapi.com/?apikey=${key}&s=${query}`;
-
+                const url = `http://www.omdbapi.com/?apikey=${key}&i=${selectedId}`;
                 const res = await fetch(url, { signal: controller.signal });
+
                 if (!res.ok) throw new Error('Network response was not ok');
 
                 const data = await res.json();
                 if (data.Response === "False") throw new Error(data.Error);
-                setMovies(data.Search);
-                setError("");
-            }
-            catch (error) {
+
+                setMovie(data);
+            } catch (error) {
                 if (error.name !== 'AbortError')
-                    setError(error.message);
+                    console.log(error);
             }
             finally {
                 setIsLoading(false);
             }
         }
+        fetchMovieDetails();
 
-        if (query.length < 3) return;
+        return function () {
+            controller.abort();
+        }
+    }, [selectedId])
 
-        // handleCloseMove();
-        setMovies([]);
-        fetchMovies();
-
-        return () => controller.abort();
-
-    }, [query]);
-
-    return { movies, isLoading, error };
+    return { movie, isLoading };
 }

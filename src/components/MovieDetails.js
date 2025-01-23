@@ -1,42 +1,14 @@
 import { useEffect, useState } from "react";
 import { Loader } from "./Loader";
 import StarRating from "./StartRating";
+import { useKey } from "./useKey";
+import { useMovieDetails } from "./useMovieDetails";
 
-const key = 'd1c45b16';
 
 export function MovieDetails({ selectedId, selectedMovie, onCloseMovie, onAddWatched }) {
-    const [movie, setMovie] = useState({});
-    const [isLoading, setIsLoading] = useState(false);
     const [userRating, setUserRating] = useState(0);
-     
-    useEffect(function () {
-        const controller = new AbortController();
-        async function fetchMovieDetails() {
-            try {
-                setIsLoading(true);
-                const url = `http://www.omdbapi.com/?apikey=${key}&i=${selectedId}`;
-                const res = await fetch(url, { signal: controller.signal });
-
-                if (!res.ok) throw new Error('Network response was not ok');
-
-                const data = await res.json();
-                if (data.Response === "False") throw new Error(data.Error);
-
-                setMovie(data);
-            } catch (error) {
-                if (error.name !== 'AbortError')
-                    console.log(error);
-            }
-            finally {
-                setIsLoading(false);
-            }
-        }
-        fetchMovieDetails();
-
-        return function () {
-            controller.abort();
-        }
-    }, [selectedId])
+    const { movie, isLoading } = useMovieDetails(selectedId);
+    useKey(onCloseMovie, 'Escape');
 
     useEffect(function () {
         if (movie)
@@ -47,21 +19,6 @@ export function MovieDetails({ selectedId, selectedMovie, onCloseMovie, onAddWat
         }
 
     }, [movie]);
-
-
-    useEffect(function () {
-        function callback(e) {
-            if (e.key === 'Escape')
-                onCloseMovie();
-        }
-
-        document.addEventListener('keydown', callback)
-
-        return function () {
-            document.removeEventListener('keydown', callback);
-        }
-    }, [onCloseMovie])
-
 
     function handleAdd() {
         const newWatchMovie = {
